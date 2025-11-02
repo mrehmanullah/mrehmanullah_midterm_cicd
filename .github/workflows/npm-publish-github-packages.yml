@@ -28,3 +28,32 @@ jobs:
       run: npm ci
     - name: Run test script
       run: npm test
+
+
+ # Task 2: Scan repository with Synk or perform SAST
+  snyk-scan:
+    name: Snyk Security Scan
+    needs: build # Ensures this runs after the build/test job completes successfully
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Required to checkout the code
+      security-events: write # Required to upload SARIF results
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies for scanning
+      run: npm ci
+
+    - name: Run Snyk to check for vulnerabilities
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --sarif-file-output=snyk-results.sarif
+    
+    - name: Upload Snyk scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'snyk-results.sarif'
